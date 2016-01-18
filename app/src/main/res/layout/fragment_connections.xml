@@ -1,0 +1,40 @@
+<!--<fragment xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/connections_fragment"
+    android:name="com.peppe.ftpclient.androidftp.FTPConnectionsList.ConnectionsFragment"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:layout="@layout/fragment_connections"> -->
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".ConnectionsFragment">
+    <!--tools:showIn="@layout/content_main"-->
+
+   <ListView
+        android:id="@android:id/list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </ListView>
+
+    <TextView
+        android:id="@+id/connections_empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/connections_empty_text"
+        android:textColor="@color/colorPrimaryDark"
+        android:layout_gravity="center"
+        android:layout_marginTop="108dp"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:drawableBottom="@mipmap/ic_empty_add"
+        android:clickable="true"
+        android:foregroundGravity="center"/>
+
+</LinearLayout>
+   <!-- </fragment> -->

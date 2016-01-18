@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">AndroidFTP</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_edit_connection">Save</string>
+    <string name="connection_at"> \@ </string>
+    <string name="connection_name_edit">Name</string>
+    <string name="connection_host_edit">Host</string>
+    <string name="connection_user_edit">User</string>
+    <string name="connection_pass_edit">Password</string>
+    <string name="connection_port_edit">Port</string>
+    <string name="connection_port_edit_default">21</string>
+    <string name="connection_protocol_edit">Protocol</string>
+    <string name="connection_anonymous_edit">Anonymous Connection</string>
+    <string name="anonymous_connection_user">anonymous</string>
+    <string name="cn_port_edit_error">Please enter a valid port between 1 and 65535</string>
+    <string name="cn_host_edit_error">Please enter a valid host</string>
+    <string name="cn_user_edit_error">Please enter a valid user</string>
+    <string name="connections_empty_text">No Connections</string>
+    <string name="dialog_download_down">Download</string>
+    <string name="dialog_download_open">Open</string>
+    <string name="dialog_download_rename">Rename</string>
+    <string name="dialog_download_delete">Delete</string>
+    <string name="cancel_string">Cancel</string>
+    <string name="empty_files_remote">No Files</string>
+    <string name="dialog_upload_up">Upload</string>
+    <string name="percent0">0%</string>
+    <string name="delete_confirm">Are you sure you want to delete</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="selected_count">%d Selected</string>
+    <string name="folder_popup_select">Select</string>
+
+    <!--File Action Mode-->
+    <string name="action_download_file">Download</string>
+    <string name="action_upload_file">Upload</string>
+    <string name="action_delete_file">Delete</string>
+    <string name="action_rename_file">Rename</string>
+    <string name="hint_rename_file">New Name</string>
+    <string name="action_cut_file">Cut</string>
+    <string name="action_copy_file">Copy</string>
+    <string name="action_paste_file">Paste</string>
+
+    <string-array name="connection_protocol_spinner">
+        <item>FTP</item>
+        <item>FTPS</item>
+    </string-array>
+
+</resources>

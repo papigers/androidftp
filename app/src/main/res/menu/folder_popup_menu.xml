@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<item
+    android:id="@+id/folderPopupOpen"
+    android:title="@string/dialog_download_open"/>
+
+<item
+    android:id="@+id/folderPopupSelect"
+    android:title="@string/folder_popup_select"/>
+
+</menu>
