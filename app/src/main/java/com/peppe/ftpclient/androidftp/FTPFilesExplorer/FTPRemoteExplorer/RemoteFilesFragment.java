@@ -29,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.peppe.ftpclient.androidftp.FTPClientMain.MainActivity;
+import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPBusEvents.PasteFilesEvent;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPBusEvents.UploadFilesEvent;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.LocalFilesFragment;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.UploadProgressDialog;
@@ -93,26 +94,8 @@ public class RemoteFilesFragment extends FilesFragment {
     }
 
     @Override
-    public void pasteMode(boolean enter) {
-        pasteMode = enter;
-        Log.d(TAG, (enter ? "Entering" : "Exiting") +" Paste Mode");
-        if(enter){
-
-            //getActivity().getActionBar().setHomeAsUpIndicator(R.drawable.ic_x);
-            oldTitle = this.getActivity().getTitle().toString();
-            this.getActivity().setTitle("Cut: "+cutFiles.size()+" File(s)");
-            Log.d(TAG, "cutFiles on enter: "+cutFiles.size());
-            mMenu.findItem(R.id.action_paste_file).setVisible(true);
-            mMenu.findItem(R.id.remote_files_settings).setVisible(false);
-        }
-        else{
-            //getActivity().getActionBar().setHomeAsUpIndicator(R.drawable.ic_back);
-            this.getActivity().setTitle(oldTitle);
-            mMenu.findItem(R.id.action_paste_file).setVisible(false);
-            mMenu.findItem(R.id.remote_files_settings).setVisible(true);
-            cutFiles.clear();
-        }
-        filesAdapter.notifyDataSetChanged();
+    public void showMenuItems(boolean show) {
+        mMenu.findItem(R.id.remote_files_settings).setVisible(show);
     }
 
     @Override

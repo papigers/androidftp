@@ -42,8 +42,8 @@ public class LocalFilesFragment extends FilesFragment {
     }
 
     @Override
-    public void pasteMode(boolean enter) {
-        //TODO
+    public void showMenuItems(boolean show) {
+        //TODO implement
     }
 
     @Override

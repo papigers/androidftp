@@ -9,6 +9,8 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
@@ -44,6 +46,8 @@ public class MainActivity extends AppCompatActivity{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -79,6 +83,16 @@ public class MainActivity extends AppCompatActivity{
         });
 
     }
+
+
+    public void pasteMode(boolean enter){
+        //TODO check
+        Menu mMenu = ((Toolbar)findViewById(R.id.toolbar)).getMenu();
+        mMenu.findItem(R.id.action_paste_file).setVisible(enter);
+        mMenu.findItem(android.R.id.home).setIcon((enter ? R.drawable.ic_x : R.drawable.ic_back));
+    }
+
+
 
     public void setRemoteFragment(RemoteFilesFragment frag){
         this.remote = frag;

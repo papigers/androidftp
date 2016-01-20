@@ -19,6 +19,7 @@ import android.webkit.MimeTypeMap;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPBusEvents.PasteFilesEvent;
 import com.peppe.ftpclient.androidftp.R;
 
 import org.apache.commons.net.ftp.FTPClient;
@@ -26,6 +27,8 @@ import org.solovyev.android.views.llm.LinearLayoutManager;
 
 import java.io.File;
 import java.util.ArrayList;
+
+import de.greenrobot.event.EventBus;
 
 /**
  * Created by Geri on 24/10/2015.
@@ -108,7 +111,29 @@ public abstract class FilesFragment extends Fragment implements ActionMode.Callb
     @Override
     public abstract boolean onActionItemClicked(ActionMode mode, MenuItem item);
 
-    public abstract void pasteMode(boolean enter);
+    public abstract void showMenuItems(boolean show);
+
+    public void pasteMode(boolean enter) {
+        pasteMode = enter;
+        Log.d(TAG, (enter ? "Entering" : "Exiting") +" Paste Mode");
+        if(enter){
+            //getActivity().getActionBar().setHomeAsUpIndicator(R.drawable.ic_x);
+            oldTitle = this.getActivity().getTitle().toString();
+            this.getActivity().setTitle("Cut: "+cutFiles.size()+" File(s)");
+            Log.d(TAG, "cutFiles on enter: "+cutFiles.size());
+            showMenuItems(false);
+        }
+        else{
+            //getActivity().getActionBar().setHomeAsUpIndicator(R.drawable.ic_back);
+            this.getActivity().setTitle(oldTitle);
+            showMenuItems(true);
+            cutFiles.clear();
+        }
+
+        EventBus bus = EventBus.getDefault();
+        bus.post(new PasteFilesEvent(enter));
+        filesAdapter.notifyDataSetChanged();
+    }
 
     @Override
     public void onDestroyActionMode(ActionMode mode) {

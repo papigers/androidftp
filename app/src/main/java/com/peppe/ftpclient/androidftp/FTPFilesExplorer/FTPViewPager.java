@@ -17,7 +17,8 @@ import android.widget.Toast;
 
 import com.peppe.ftpclient.androidftp.FTPClientMain.FTPConnection;
 import com.peppe.ftpclient.androidftp.FTPClientMain.MainActivity;
-import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.LocalFilesAdapter;
+import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPBusEvents.PasteFilesEvent;
+import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPBusEvents.UploadFilesEvent;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.LocalFilesFragment;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPRemoteExplorer.RemoteFilesFragment;
 import com.peppe.ftpclient.androidftp.R;
@@ -25,6 +26,8 @@ import com.peppe.ftpclient.androidftp.R;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
+
+import de.greenrobot.event.EventBus;
 
 //TODO: add MyFTPClient "bridge"
 public class FTPViewPager extends Fragment {
@@ -35,6 +38,10 @@ public class FTPViewPager extends Fragment {
     private FTPPagerAdapter adapter;
     private FTPClient client;
     private View v;
+
+    private EventBus bus = EventBus.getDefault();
+
+    private Menu mMenu;
 
     public static FTPViewPager newInstance(FTPConnection connection) {
         FTPViewPager fragment = new FTPViewPager();
@@ -48,6 +55,7 @@ public class FTPViewPager extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        bus.register(this);
         if (getArguments() != null) {
             this.connection = (FTPConnection)getArguments().getSerializable(CONNECT);
             //do something when on start
@@ -75,16 +83,25 @@ public class FTPViewPager extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        //inflater.inflate(R.menu.menu_edit_connections, menu);
-        //menu.findItem(R.menu.menu_main).setVisible(false);
+        inflater.inflate(R.menu.menu_view_pager, menu);
+        mMenu = menu;
+    }
+
+    public void onEvent(PasteFilesEvent event) {
+        setPasteVisible(event.activate);
+    }
+
+    public void setPasteVisible(boolean visible){
+        mMenu.findItem(R.id.action_paste_file).setVisible(visible);
+        mMenu.findItem(android.R.id.home).setIcon((visible ? R.drawable.ic_x : R.drawable.ic_back));
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        MainActivity activity =(MainActivity)getActivity();
         switch (item.getItemId()) {
             case android.R.id.home:
                 boolean pasteOverride = false;
-                MainActivity activity =(MainActivity)getActivity();
                 if(activity.isRemoteAlive){
                     RemoteFilesFragment remote = activity.remote;
                     if(remote.isPasteMode()){
@@ -106,6 +123,14 @@ public class FTPViewPager extends Fragment {
                         fm.popBackStack();
                     }
                 }
+                return true;
+            case R.id.action_paste_file:
+                Toast.makeText(getContext(), "clicked paste", Toast.LENGTH_SHORT).show();
+                if(activity.isRemoteAlive){
+                    activity.remote.pasteFiles();
+                }
+                else
+                    activity.local.pasteFiles();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
