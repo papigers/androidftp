@@ -27,6 +27,7 @@ public class RemoteFilesAdapter  extends FilesAdapter<FTPFile> {
         super(fragment);
     }
 
+
     @Override
     public ArrayList<Integer> getSelectedIndices() {
         ArrayList<Integer> items =
@@ -69,7 +70,7 @@ public class RemoteFilesAdapter  extends FilesAdapter<FTPFile> {
             holder.getInfoTextView().setText(size + " - " + time);
         else
             holder.getInfoTextView().setText(time);
-        fileOnClickListener listener = new fileOnClickListener(fragment, ftpFile);
+        fileOnClickListener listener = new fileOnClickListener(fragment, position);
         holder.itemView.setOnClickListener(listener);
         holder.itemView.setOnLongClickListener(listener);
         if(ftpFile.isFile()){
@@ -77,7 +78,7 @@ public class RemoteFilesAdapter  extends FilesAdapter<FTPFile> {
         }
         else
             holder.getImageView().setImageResource(android.R.drawable.ic_menu_gallery);
-        boolean activate = (isSelected(position) || (fragment.cutFiles != null && fragment.cutFiles.contains(ftpFile.getName())));
+        boolean activate = (isSelected(position) || isCut(ftpFile.getName()));
         holder.itemView.setActivated(activate);
     }
 
@@ -88,9 +89,11 @@ public class RemoteFilesAdapter  extends FilesAdapter<FTPFile> {
     protected class fileOnClickListener implements View.OnClickListener, View.OnLongClickListener {
         FilesFragment fragment;
         FTPFile file;
+        int pos;
 
-        public fileOnClickListener(FilesFragment fragment, FTPFile file) {
-            this.file = file;
+        public fileOnClickListener(FilesFragment fragment, int pos) {
+            this.pos = pos;
+            this.file = dataset.get(pos);
             this.fragment = fragment;
         }
 
@@ -145,7 +148,7 @@ public class RemoteFilesAdapter  extends FilesAdapter<FTPFile> {
             }
             else {
                 if (isDirectory(file)) {
-                    if(!(fragment.cutFiles != null && fragment.cutFiles.contains(file.getName()))) {
+                    if(!isCut(file.getName())) {
                         Log.d(TAG, "Directory " + file.getName() + " clicked.");
                         fragment.openDirecory(file.getName());
                     }

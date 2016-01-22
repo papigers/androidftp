@@ -9,8 +9,11 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ActionMode;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
@@ -20,11 +23,12 @@ import com.peppe.ftpclient.androidftp.FTPConnectionsList.EditConnectionFragment;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.LocalFilesFragment;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPRemoteExplorer.RemoteFilesFragment;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPViewPager;
+import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FilesFragment;
 import com.peppe.ftpclient.androidftp.R;
 
 import org.apache.commons.net.ftp.FTPClient;
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity implements ActionMode.Callback{
 
     private final String TAG = "MAINACTIVITY";
     private final String TEST_HOST = "speedtest.tele2.net";
@@ -38,6 +42,8 @@ public class MainActivity extends AppCompatActivity{
     public LocalFilesFragment local;
 
     public Toast commonToast;
+
+    public ActionMode actionMode;
 
     public FloatingActionButton fab;
 
@@ -85,15 +91,6 @@ public class MainActivity extends AppCompatActivity{
     }
 
 
-    public void pasteMode(boolean enter){
-        //TODO check
-        Menu mMenu = ((Toolbar)findViewById(R.id.toolbar)).getMenu();
-        mMenu.findItem(R.id.action_paste_file).setVisible(enter);
-        mMenu.findItem(android.R.id.home).setIcon((enter ? R.drawable.ic_x : R.drawable.ic_back));
-    }
-
-
-
     public void setRemoteFragment(RemoteFilesFragment frag){
         this.remote = frag;
     }
@@ -123,6 +120,40 @@ public class MainActivity extends AppCompatActivity{
         }
 
     }
+
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        return true;
+
+    }
+
+    /*
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        Log.d(TAG,((event.getKeyCode() == KeyEvent.KEYCODE_BACK) ? "back" : "not back") +" "+
+                ((event.getAction() == KeyEvent.ACTION_UP) ? "up" : "not up"));
+        if(event.getKeyCode() == KeyEvent.KEYCODE_BACK){
+            FilesFragment frag = null;
+            if(remote != null && isRemoteAlive && !isLocalAlive){
+                frag = remote;
+            }
+            else if(local != null && !isRemoteAlive && isLocalAlive){
+                frag = local;
+            }
+            if(frag !=null && frag.isPasteMode()) {
+                Log.d(TAG, "back on paste mode");
+
+                if (!frag.pressBack()) {
+                    Log.d(TAG, "back on paste mode overrided");
+                    return true;
+                }
+                return super.dispatchKeyEvent(event);
+            }
+            else {
+                return super.dispatchKeyEvent(event);
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }*/
 
     protected void onResume(){
         super.onResume();
@@ -174,4 +205,39 @@ public class MainActivity extends AppCompatActivity{
             cf.editDatabase(old, edited);
         }
     }
+
+
+    @Override
+    public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+        MenuInflater inflater = mode.getMenuInflater();
+        inflater.inflate(R.menu.files_action_mode_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+        return false;
+    }
+
+    @Override
+    public boolean onActionItemClicked(ActionMode mode, MenuItem item){
+        return getActiveFragment().onActionItemClicked(mode, item);
+    }
+
+
+    @Override
+    public void onDestroyActionMode(ActionMode mode) {
+        FilesFragment frag = getActiveFragment();
+        frag.actionMode = null;
+        frag.filesAdapter.clearSelections();
+        frag.filesAdapter.clearCuts();
+    }
+
+    public FilesFragment getActiveFragment(){
+        if(remote!=null && isRemoteAlive && !isLocalAlive)
+            return remote;
+        else
+            return local;
+    }
+
 }

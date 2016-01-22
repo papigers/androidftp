@@ -43,12 +43,18 @@ public class LocalFilesFragment extends FilesFragment {
 
     @Override
     public void showMenuItems(boolean show) {
-        //TODO implement
+        actionMode.getMenu().findItem(R.id.action_downupload_file).setVisible(show);
+        actionMode.getMenu().findItem(R.id.action_delete_file).setVisible(show);
+        actionMode.getMenu().findItem(R.id.action_cut_file).setVisible(show);
+        actionMode.getMenu().findItem(R.id.action_copy_file).setVisible(show);
+        actionMode.getMenu().findItem(R.id.action_rename_file).setVisible(show);
+        //make sure to include copy item on local
+        actionMode.getMenu().findItem(R.id.action_paste_file).setVisible(!show);
     }
 
     @Override
     public void pasteFiles() {
-        for (String fileName : cutFiles) {
+        for (String fileName : ((LocalFilesAdapter)filesAdapter).getCutNames()) {
             String source = joinPath(cutSource, fileName);
             String dest = joinPath(dir, fileName);
             if(copy) {
@@ -92,16 +98,13 @@ public class LocalFilesFragment extends FilesFragment {
                 mode.finish();
                 return true;
             case R.id.action_cut_file:
-                cutFiles(adapter.getSelectedNames(), false);
-                mode.finish();
+                cutFiles(false);
                 return true;
             case R.id.action_copy_file:
-                cutFiles(adapter.getSelectedNames(), true);
-                mode.finish();
+                cutFiles(true);
                 return true;
             case R.id.action_paste_file:
                 pasteFiles();
-                mode.finish();
                 return true;
         }
         return false;
@@ -125,7 +128,7 @@ public class LocalFilesFragment extends FilesFragment {
 
     @Override
     public void changeWorkingDirectory(String path) {
-        if(actionMode != null) actionMode.finish();
+        if(actionMode != null && !isPasteMode()) actionMode.finish();
         dir = path;
         File folder = new File(path);
         File[] files = folder.listFiles();

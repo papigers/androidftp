@@ -24,6 +24,13 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
     //********************** ITEM SELECTION **********************//
 
     protected SparseBooleanArray selectedItems;
+    protected ArrayList<String> cutItems;
+
+    public void cutSelection(){
+        cutItems = getSelectedNames();
+        selectedItems.clear();
+        notifyDataSetChanged();
+    }
 
     public boolean toggleSelection(int pos) {
         boolean ans = false;
@@ -42,13 +49,27 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
         return selectedItems.get(pos,false);
     }
 
+    public boolean isCut(String name){
+        return fragment.dir.equals(fragment.cutSource) && cutItems.contains(name);
+    }
+
     public void clearSelections() {
         selectedItems.clear();
         notifyDataSetChanged();
     }
 
+    public void clearCuts() {
+        cutItems.clear();
+        notifyDataSetChanged();
+    }
+
+
     public int getSelectedItemCount() {
         return selectedItems.size();
+    }
+
+    public int getCutItemCount() {
+        return cutItems.size();
     }
 
     public boolean isSelecting() { return getSelectedItemCount() != 0; }
@@ -64,6 +85,10 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
 
     public abstract ArrayList<E> getSelectedItems();
 
+    public ArrayList<String> getCutNames(){
+        return cutItems;
+    }
+
     public abstract ArrayList<String> getSelectedNames();
 
     //********************** END ITEM SELECTION **********************//
@@ -71,6 +96,7 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
     public FilesAdapter(FilesFragment fragment) {
         this.fragment = fragment;
         this.selectedItems = new SparseBooleanArray();
+        this.cutItems = new ArrayList<>();
     }
 
     @Override

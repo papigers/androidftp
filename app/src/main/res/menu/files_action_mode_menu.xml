@@ -34,4 +34,11 @@
         app:showAsAction="ifRoom"
         android:visible="false"/>
 
+    <item android:id="@+id/action_paste_file"
+        android:title="@string/action_paste_file"
+        android:icon="@drawable/ic_paste"
+        android:orderInCategory="2"
+        app:showAsAction="ifRoom"
+        android:visible="false"/>
+
 </menu>

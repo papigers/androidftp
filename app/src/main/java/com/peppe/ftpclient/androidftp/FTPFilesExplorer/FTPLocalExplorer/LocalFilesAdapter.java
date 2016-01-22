@@ -25,6 +25,7 @@ public class LocalFilesAdapter extends FilesAdapter<File> {
         super(fragment);
     }
 
+
     @Override
     public ArrayList<File> getSelectedItems() {
         ArrayList<File> items =
@@ -79,6 +80,8 @@ public class LocalFilesAdapter extends FilesAdapter<File> {
             this.file = file;
             this.fragment = fragment;
         }
+
+        //TODO: handle listeners in paste mode.
 
         @Override
         public boolean onLongClick(View v) {

@@ -29,7 +29,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.peppe.ftpclient.androidftp.FTPClientMain.MainActivity;
-import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPBusEvents.PasteFilesEvent;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPBusEvents.UploadFilesEvent;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.LocalFilesFragment;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.UploadProgressDialog;
@@ -82,10 +81,6 @@ public class RemoteFilesFragment extends FilesFragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
-            case R.id.action_paste_file:
-                Log.d(TAG, "Pressed on paste menu button");
-                pasteFiles();
-                return true;
             case R.id.action_settings:
                 return true;
             default:
@@ -95,7 +90,12 @@ public class RemoteFilesFragment extends FilesFragment {
 
     @Override
     public void showMenuItems(boolean show) {
-        mMenu.findItem(R.id.remote_files_settings).setVisible(show);
+        actionMode.getMenu().findItem(R.id.action_downupload_file).setVisible(show);
+        actionMode.getMenu().findItem(R.id.action_delete_file).setVisible(show);
+        actionMode.getMenu().findItem(R.id.action_cut_file).setVisible(show);
+        actionMode.getMenu().findItem(R.id.action_rename_file).setVisible(show);
+        //make sure to include copy item on local
+        actionMode.getMenu().findItem(R.id.action_paste_file).setVisible(!show);
     }
 
     @Override
@@ -158,16 +158,19 @@ public class RemoteFilesFragment extends FilesFragment {
                 return true;
             case R.id.action_cut_file:
                 Log.d(TAG, "Pressed on cut action mode button");
-                cutFiles(adapter.getSelectedNames(), false);
-                mode.finish();
+                cutFiles(false);
+                return true;
+            case R.id.action_paste_file:
+                Log.d(TAG, "Pressed on paste action mode button");
+                pasteFiles();
                 return true;
         }
         return false;
     }
 
     @Override
-    public void cutFiles(ArrayList<String> files, boolean copy) {
-        super.cutFiles(files, copy);
+    public void cutFiles(boolean copy) {
+        super.cutFiles(copy);
 
     }
 
@@ -205,11 +208,13 @@ public class RemoteFilesFragment extends FilesFragment {
 
 
     public void pasteFiles(){
-        String[] args = new String[cutFiles.size()+1];
+        int count = filesAdapter.getCutItemCount();
+        String[] args = new String[count+1];
+        ArrayList<String> cutFiles = ((RemoteFilesAdapter)filesAdapter).getCutNames();
         args[0] = cutSource;
         Log.d(TAG, "pasting files from "+cutSource+" to "+dir);
-        Log.d(TAG, "size: "+cutFiles.size());
-        for(int i = 0; i < cutFiles.size(); i++) {
+        Log.d(TAG, "size: "+count);
+        for(int i = 0; i < count; i++) {
             Log.d(TAG, "adding "+cutFiles.get(i)+ "to place "+(i+1));
             args[i + 1] = cutFiles.get(i);
         }
@@ -235,7 +240,7 @@ public class RemoteFilesFragment extends FilesFragment {
     }
 
     public void changeWorkingDirectory(String path) {
-        if(actionMode != null) actionMode.finish();
+        if(actionMode != null && !isPasteMode()) actionMode.finish();
         new FTPChangeDirectoryTask().execute(path);
     }
 
@@ -340,7 +345,6 @@ public class RemoteFilesFragment extends FilesFragment {
         protected void onPostExecute(Void aVoid) {
             Toast.makeText(getContext(), "Refreshing Files...", Toast.LENGTH_SHORT).show();
             new FTPFilesTask().execute();
-            cutFiles.clear();
         }
 
         @Override
@@ -990,6 +994,7 @@ public class RemoteFilesFragment extends FilesFragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        pasteMode(false);
+        if(actionMode!= null)
+            pasteMode(false);
     }
 }
