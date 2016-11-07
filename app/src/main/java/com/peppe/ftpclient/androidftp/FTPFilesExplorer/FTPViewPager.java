@@ -1,7 +1,10 @@
 package com.peppe.ftpclient.androidftp.FTPFilesExplorer;
 
+import android.content.Context;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.ViewPager;
@@ -12,11 +15,17 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.peppe.ftpclient.androidftp.FTPClientMain.FTPConnection;
 import com.peppe.ftpclient.androidftp.FTPClientMain.MainActivity;
+import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.LocalFilesFragment;
+import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPRemoteExplorer.RemoteFilesFragment;
 import com.peppe.ftpclient.androidftp.R;
 
 import org.apache.commons.net.ftp.FTP;
@@ -25,7 +34,6 @@ import org.apache.commons.net.ftp.FTPReply;
 
 import de.greenrobot.event.EventBus;
 
-//TODO: add MyFTPClient "bridge"
 public class FTPViewPager extends Fragment {
     private static final String CONNECT = "connect";
     private static final String TAG = "FTP_PAGER";
@@ -107,13 +115,31 @@ public class FTPViewPager extends Fragment {
                 if(c.isConnected()) {
                     ViewPager pager = (ViewPager) FTPViewPager.this.v.findViewById(R.id.ftpViewPager);
                     pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+                        final MainActivity activity = ((MainActivity) getActivity());
+                        FloatingActionButton fab = activity.fab;
+                        Animation show = AnimationUtils.loadAnimation(getContext(), R.anim.fab_show);
+                        Animation hide = AnimationUtils.loadAnimation(getContext(), R.anim.fab_hide);
+                        boolean shown = true;
+
                         @Override
                         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                            //Log.d(TAG, "scroll position: " + position + ", offset: " + positionOffset);
+                            if(!shown && positionOffset == 0) {
+                                Log.d(TAG, "showing fab");
+                                shown = true;
+                                fab.startAnimation(show);
+                                fab.show();
+                            }
+                            else if (shown && positionOffset!= 0){
+                                shown = false;
+                                Log.d(TAG, "hiding fab");
+                                fab.startAnimation(hide);
+                                fab.hide();
+                            }
                         }
 
                         @Override
                         public void onPageSelected(int position) {
-                            MainActivity activity = ((MainActivity) getActivity());
                             if (position == 0) {
                                 //activity.setTitle("Remote");
                                 Log.d(FTPViewPager.TAG, "remote alive 1");
@@ -124,7 +150,12 @@ public class FTPViewPager extends Fragment {
                                 Log.d(FTPViewPager.TAG, "local alive 1");
                                 activity.isRemoteAlive = false;
                                 activity.isLocalAlive = true;
+                                if(activity.requestStoragePermission(getString(R.string.cant_show_files)))
+                                    activity.getActiveFragment().refreshDir();
                             }
+                            activity.getActiveFragment().ensurePathIsSowhn();
+                            //Log.d(TAG, "selected");
+                            fab.show();
                         }
 
                         @Override
@@ -134,19 +165,18 @@ public class FTPViewPager extends Fragment {
                     pager.setVisibility(View.VISIBLE);
                     ProgressBar progress = (ProgressBar) FTPViewPager.this.v.findViewById(R.id.loadConnectionProgressBar);
                     progress.setVisibility(View.GONE);
-                    adapter = new FTPPagerAdapter(c, (MainActivity) getActivity(), getChildFragmentManager());
+                    adapter = new FTPPagerAdapter(c, connection, (MainActivity) getActivity(), getChildFragmentManager());
                     pager.setAdapter(adapter);
-
-                }
-                else{
-                    Toast t = ((MainActivity)getActivity()).commonToast;
+                    FloatingActionButton fab = ((MainActivity) getActivity()).fab;
+                    fab.setOnClickListener(((MainActivity)getActivity()));
+                } else {
+                    Toast t = ((MainActivity) getActivity()).commonToast;
                     t.setText("Authentication failed...");
                     t.show();
                     getActivity().onBackPressed();
                 }
-            }
-            else if(c==null){
-                Toast t = ((MainActivity)getActivity()).commonToast;
+            } else if (c == null) {
+                Toast t = ((MainActivity) getActivity()).commonToast;
                 t.setText("Failed to connect...");
                 t.show();
                 getActivity().onBackPressed();
@@ -171,15 +201,13 @@ public class FTPViewPager extends Fragment {
                 if (suc) {
                     Log.d(TAG, "connected and authenticated!");
                     return client;
-                }
-                else {
+                } else {
                     Log.d(TAG, "failed to authenticate!");
                     client.disconnect();
                     return client;
                 }
 
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.e(TAG, e.toString());
                 Log.d(TAG, "Error: could not connect to host " + connection.getHost());
             }

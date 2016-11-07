@@ -4,6 +4,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 
+import com.peppe.ftpclient.androidftp.FTPClientMain.FTPConnection;
 import com.peppe.ftpclient.androidftp.FTPClientMain.MainActivity;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.LocalFilesFragment;
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPRemoteExplorer.RemoteFilesFragment;
@@ -17,6 +18,7 @@ public class FTPPagerAdapter extends FragmentPagerAdapter {
 
     private FTPClient client;
     private MainActivity activity;
+    private FTPConnection connection;
 
     @Override
     public Fragment getItem(int position) {
@@ -25,11 +27,13 @@ public class FTPPagerAdapter extends FragmentPagerAdapter {
             case 0:
                 RemoteFilesFragment remote = new RemoteFilesFragment();
                 remote.setClient(client);
+                remote.connection = connection;
                 activity.setRemoteFragment(remote);
                 return remote;
             //local
             case 1:
                 LocalFilesFragment local = new LocalFilesFragment();
+                local.connection = connection;
                 activity.setLocalFragment(local);
                 return local;
             default:
@@ -42,9 +46,10 @@ public class FTPPagerAdapter extends FragmentPagerAdapter {
         return 2;
     }
 
-    public FTPPagerAdapter(FTPClient client, MainActivity activity , FragmentManager mgr){
+    public FTPPagerAdapter(FTPClient client, FTPConnection connection, MainActivity activity , FragmentManager mgr){
         super(mgr);
         this.client = client;
+        this.connection = connection;
         this.activity = activity;
     }
 

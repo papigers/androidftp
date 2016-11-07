@@ -59,7 +59,8 @@ public class DownloadDialog extends DialogFragment {
         View v = inflater.inflate(R.layout.file_dialog, container, false);
         getDialog().setTitle(file.getName());
         TextView name = (TextView) getDialog().findViewById(android.R.id.title);
-        name.setGravity(Gravity.CENTER);
+        //name.setGravity(Gravity.CENTER);
+        //// TODO: 11/02/2016 check this 
         final RemoteFilesFragment fragment = (RemoteFilesFragment)getTargetFragment();
 
         final TextView down = (TextView)v.findViewById(R.id.dialogFileDownUpView);

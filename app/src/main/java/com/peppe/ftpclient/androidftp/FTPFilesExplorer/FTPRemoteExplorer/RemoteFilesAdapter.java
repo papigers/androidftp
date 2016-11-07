@@ -15,6 +15,7 @@ import org.apache.commons.net.ftp.FTPFile;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 
 /**
  * Created by Geri on 24/10/2015.
@@ -25,6 +26,94 @@ public class RemoteFilesAdapter  extends FilesAdapter<FTPFile> {
 
     public RemoteFilesAdapter(FilesFragment fragment) {
         super(fragment);
+    }
+
+    @Override
+    protected void sort(int mode) {
+        ArrayList<FTPFile> sorted = new ArrayList<>(dataset);
+        Collections.sort(sorted, new FTPFileComparator(mode));
+        animateTo(sorted);
+    }
+
+    private class FTPFileComparator extends FileComparator{
+
+        public FTPFileComparator(int mode){
+            super(mode);
+        }
+
+        @Override
+        public int compare(FTPFile lhs, FTPFile rhs) {
+            if(lhs.isDirectory() && rhs.isFile()){
+                return -1;
+            }
+            else if (lhs.isFile() && rhs.isDirectory())
+                return 1;
+            else {
+                int res = 0;
+                switch (super.mode) {
+                    case BY_NAME:
+                        res = sortName(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortType(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortTime(lhs, rhs);
+                        if(res != 0) return res;
+                        return sortSize(lhs, rhs);
+                    case BY_SIZE:
+                        res = sortSize(lhs, rhs);
+                        if(res != 0) return res;
+                        res  = sortName(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortType(lhs, rhs);
+                        if(res != 0) return res;
+                        return sortTime(lhs, rhs);
+                    case BY_TYPE:
+                        res = sortType(lhs, rhs);
+                        if(res != 0) return res;
+                        res  = sortName(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortTime(lhs, rhs);
+                        if(res != 0) return res;
+                        return sortSize(lhs, rhs);
+                    case BY_TIME:
+                        res = sortTime(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortName(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortType(lhs, rhs);
+                        if(res != 0) return res;
+                        return sortSize(lhs, rhs);
+                    default:
+                        return 0;
+                }
+            }
+        }
+
+        private int sortName(FTPFile lhs, FTPFile rhs){
+            String name1 = getName(lhs.getName());
+            String name2 = getName(rhs.getName());
+            return name1.compareTo(name2);
+        }
+
+        private int sortSize(FTPFile lhs, FTPFile rhs){
+            long  res = lhs.getSize() - rhs.getSize();
+            if(res > 0) return 1;
+            else if (res < 0) return -1;
+            return 0;
+        }
+
+        private int sortTime(FTPFile lhs, FTPFile rhs){
+            long res = lhs.getTimestamp().getTimeInMillis() - rhs.getTimestamp().getTimeInMillis();
+            if(res > 0) return 1;
+            else if (res < 0) return -1;
+            return 0;
+        }
+
+        private int sortType(FTPFile lhs, FTPFile rhs){
+            String type1 = getExt(lhs.getName());
+            String type2 = getExt(rhs.getName());
+            return type1.compareTo(type2);
+        }
     }
 
 
@@ -64,7 +153,7 @@ public class RemoteFilesAdapter  extends FilesAdapter<FTPFile> {
         holder.getNameTextView().setText(ftpFile.getName());
         String size = convertToStringRepresentation(ftpFile.getSize());
         Calendar ctime = ftpFile.getTimestamp();
-        SimpleDateFormat formatter = new SimpleDateFormat("MMM d, yyyy hh:mm a");
+        SimpleDateFormat formatter = new SimpleDateFormat("MMM d, yyyy hh:mm a", java.util.Locale.getDefault());
         String time = formatter.format(ctime.getTime());
         if(ftpFile.isFile())
             holder.getInfoTextView().setText(size + " - " + time);

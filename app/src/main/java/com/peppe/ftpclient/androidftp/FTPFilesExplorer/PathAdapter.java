@@ -97,7 +97,7 @@ public class PathAdapter extends RecyclerView.Adapter<PathAdapter.ViewHolder> {
         @Override
         public void onClick(View v) {
             Log.d(TAG, "Directory Path " + path + " clicked.");
-            fragment.changeWorkingDirectory(path);
+            fragment.changeWorkingDirectory(path, false);
         }
     }
 }

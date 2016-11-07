@@ -5,40 +5,46 @@
     <item android:id="@+id/action_downupload_file"
         android:icon="@android:drawable/stat_sys_download_done"
         android:title="@string/action_download_file"
-        android:orderInCategory="1"
+        android:orderInCategory="10"
         android:tint="@android:color/white"
         app:showAsAction="ifRoom" />
 
     <item android:id="@+id/action_delete_file"
         android:icon="@drawable/ic_delete"
         android:title="@string/action_delete_file"
-        android:orderInCategory="2"
+        android:orderInCategory="20"
         android:tint="@android:color/white"
         app:showAsAction="ifRoom" />
 
     <item android:id="@+id/action_rename_file"
         android:title="@string/action_rename_file"
-        android:orderInCategory="3"
+        android:orderInCategory="50"
         app:showAsAction="never" />
 
     <item android:id="@+id/action_cut_file"
         android:title="@string/action_cut_file"
         android:icon="@drawable/ic_cut"
-        android:orderInCategory="2"
+        android:orderInCategory="30"
         app:showAsAction="ifRoom" />
 
     <item android:id="@+id/action_copy_file"
         android:title="@string/action_copy_file"
         android:icon="@drawable/ic_copy"
-        android:orderInCategory="2"
+        android:orderInCategory="30"
         app:showAsAction="ifRoom"
         android:visible="false"/>
 
-    <item android:id="@+id/action_paste_file"
-        android:title="@string/action_paste_file"
-        android:icon="@drawable/ic_paste"
-        android:orderInCategory="2"
-        app:showAsAction="ifRoom"
-        android:visible="false"/>
+    <item android:id="@+id/action_info_file"
+        android:title="@string/action_info_file"
+        android:icon="@drawable/ic_info"
+        android:orderInCategory="40"
+        app:showAsAction="ifRoom" />
+
+    <item android:id="@+id/action_url_share_file"
+        android:icon="@drawable/ic_cut"
+        android:title="@string/action_url_file"
+        android:orderInCategory="60"
+        app:showAsAction="never" />
+
 
 </menu>

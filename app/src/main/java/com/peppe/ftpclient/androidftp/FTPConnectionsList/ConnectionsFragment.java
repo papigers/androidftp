@@ -5,6 +5,7 @@ package com.peppe.ftpclient.androidftp.FTPConnectionsList;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ListFragment;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -40,7 +41,6 @@ public class ConnectionsFragment extends ListFragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
 
 
 
@@ -55,10 +55,23 @@ public class ConnectionsFragment extends ListFragment{
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        final MainActivity activity = ((MainActivity) getActivity());
+        FloatingActionButton fab = activity.fab;
+        fab.show();
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                activity.startEditConnection(null);
+            }
+        });
+    }
+
+    @Override
     public void onViewCreated(View view, Bundle savedInstanceState){
         super.onViewCreated(view, savedInstanceState);
 
-        ((MainActivity)getActivity()).fab.setVisibility(View.VISIBLE);
 
         TextView empty=(TextView)view.findViewById(R.id.connections_empty);
         ListView list = getListView();
@@ -102,6 +115,7 @@ public class ConnectionsFragment extends ListFragment{
             @Override
             public void onItemClick(AdapterView<?> listView, View view,
                                     int position, long id) {
+
                 // Get the cursor, positioned to the corresponding row in the result set
                 Cursor cursor = (Cursor) listView.getItemAtPosition(position);
                 int cid = cursor.getInt(cursor.getColumnIndexOrThrow(FTPConnectionsDBHelper.KEY_ROWID));
@@ -117,6 +131,7 @@ public class ConnectionsFragment extends ListFragment{
                 Toast t = ((MainActivity)getActivity()).commonToast;
                 t.setText("Connecting...");
                 t.show();
+
                 //Toast.makeText(getActivity(), "Connecting...", Toast.LENGTH_SHORT).show();
                 ((MainActivity)getActivity()).connectTo(connection);
             }
@@ -141,27 +156,6 @@ public class ConnectionsFragment extends ListFragment{
         adapter.notifyDataSetChanged();
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.menu_main, menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     @Override
     public void onDestroy() {

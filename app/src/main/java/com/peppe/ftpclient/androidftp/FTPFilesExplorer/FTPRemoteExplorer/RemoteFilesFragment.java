@@ -2,6 +2,8 @@ package com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPRemoteExplorer;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -35,6 +37,7 @@ import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FTPLocalExplorer.UploadPr
 import com.peppe.ftpclient.androidftp.FTPFilesExplorer.FilesFragment;
 import com.peppe.ftpclient.androidftp.R;
 
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPFileFilter;
@@ -45,11 +48,13 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import de.greenrobot.event.EventBus;
 
 
-public class RemoteFilesFragment extends FilesFragment {
+public class RemoteFilesFragment extends FilesFragment<FTPFile> {
 
     private static final String TAG = "REMOTE_FRAGMENT";
 
@@ -71,39 +76,19 @@ public class RemoteFilesFragment extends FilesFragment {
     public RemoteFilesFragment() {
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.remote_files_menu, menu);
-        mMenu = menu;
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
-            case R.id.action_settings:
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    public void showMenuItems(boolean show) {
-        actionMode.getMenu().findItem(R.id.action_downupload_file).setVisible(show);
-        actionMode.getMenu().findItem(R.id.action_delete_file).setVisible(show);
-        actionMode.getMenu().findItem(R.id.action_cut_file).setVisible(show);
-        actionMode.getMenu().findItem(R.id.action_rename_file).setVisible(show);
-        //make sure to include copy item on local
-        actionMode.getMenu().findItem(R.id.action_paste_file).setVisible(!show);
-    }
 
     @Override
     public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
         RemoteFilesAdapter adapter = (RemoteFilesAdapter)filesAdapter;
         switch(item.getItemId()){
             case R.id.action_downupload_file:
-                downloadFiles(false, adapter.getSelectedItems());
+                if(getStoragePermissions(getText(R.string.cant_download_files).toString()))
+                    downloadFiles(false, adapter.getSelectedItems());
+                mode.finish();
+                return true;
+            case R.id.action_url_share_file:
+                copyUrl(adapter.getSelectedNames().get(0));
                 mode.finish();
                 return true;
             case R.id.action_delete_file:
@@ -111,73 +96,69 @@ public class RemoteFilesFragment extends FilesFragment {
                 mode.finish();
                 return true;
             case R.id.action_rename_file:
-                final String name = adapter.getSelectedNames().get(0);
-                final DialogFragment renameDialog = new DialogFragment(){
-                    @Nullable
-                    @Override
-                    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-                        View v = inflater.inflate(R.layout.file_rename_dialog, container);
-
-                        getDialog().setTitle(name);
-                        ((TextView)getDialog().findViewById(android.R.id.title)).setGravity(Gravity.CENTER);
-                        final EditText renameEdit = (EditText)v.findViewById(R.id.renameEditText);
-                        renameEdit.setText(name);
-                        renameEdit.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                            @Override
-                            public void onFocusChange(View v, boolean hasFocus) {
-                                if (hasFocus) {
-                                    String text = renameEdit.getText().toString();
-                                    if (!text.isEmpty()) {
-                                        int index = text.lastIndexOf('.');
-                                        if (index == -1)
-                                            renameEdit.selectAll();
-                                        else
-                                            renameEdit.setSelection(0, index);
-                                        InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                                        inputMethodManager.toggleSoftInputFromWindow(renameEdit.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
-                                    }
-                                }
-                            }
-                        });
-                        v.findViewById(R.id.renameTextView).setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                String newName = ((EditText) getDialog().findViewById(R.id.renameEditText)).getText().toString();
-                                renameFile(name, newName);
-                                dismiss();
-                            }
-                        });
-                        renameEdit.requestFocus();
-                        return v;
-                    }
-                };
-
-                FragmentManager fm = getActivity().getSupportFragmentManager();
-                renameDialog.show(fm, "Rename");
+                showRenameDialog();
                 mode.finish();
                 return true;
             case R.id.action_cut_file:
                 Log.d(TAG, "Pressed on cut action mode button");
                 cutFiles(false);
                 return true;
-            case R.id.action_paste_file:
-                Log.d(TAG, "Pressed on paste action mode button");
-                pasteFiles();
+            case R.id.action_info_file:
+                final FTPFile file = adapter.getSelectedItems().get(0);
+                final DialogFragment infoDialog = new DialogFragment(){
+                    @Nullable
+                    @Override
+                    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+                        View v = inflater.inflate(R.layout.file_info_dialog, container);
+
+                        getDialog().setTitle(R.string.action_info_file);
+                        ((TextView)getDialog().findViewById(android.R.id.title)).setGravity(Gravity.CENTER);
+                        TextView nameText = (TextView)v.findViewById(R.id.infoNameTextView);
+                        nameText.setText(file.getName());
+                        TextView sizeText = (TextView)v.findViewById(R.id.infoSizeTextView);
+                        sizeText.setText(filesAdapter.convertToStringRepresentation(file.getSize()));
+                        TextView typeText = (TextView)v.findViewById(R.id.infoTypeTextView);
+                        if(file.isDirectory()) {
+                            typeText.setText("Directory");
+                            sizeText.setVisibility(View.GONE);
+                        }
+                        else
+                            typeText.setText(getTypeByName(file.getName()));
+
+                        TextView dirText = (TextView)v.findViewById(R.id.infoDirTextView);
+                        dirText.setText(dir);
+                        return v;
+                    }
+                };
+
+                FragmentManager ifm = getActivity().getSupportFragmentManager();
+                infoDialog.show(ifm, "Rename");
+                mode.finish();
                 return true;
         }
         return false;
     }
 
+    private void copyUrl(String name){
+        String addr = "ftp://"+ connection.getHost() +":"+connection.getPort()+joinPath(dir, name);
+        ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
+
+
+        ClipData clip = ClipData.newPlainText(getContext().getString(getContext().getApplicationInfo().labelRes)+" File URL", addr);
+        clipboard.setPrimaryClip(clip);
+        Toast.makeText(getActivity(), "File URL copied to clipboard!", Toast.LENGTH_SHORT).show();
+
+    }
+
     @Override
     public void cutFiles(boolean copy) {
         super.cutFiles(copy);
-
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
+        dir = "//";
         bus.register(this);
     }
 
@@ -240,17 +221,16 @@ public class RemoteFilesFragment extends FilesFragment {
     }
 
     public void changeWorkingDirectory(String path) {
-        if(actionMode != null && !isPasteMode()) actionMode.finish();
+        if(actionMode != null) actionMode.finish();
         new FTPChangeDirectoryTask().execute(path);
     }
 
-    //TODO: finish delete
     @Override
     public void deleteFiles(ArrayList<String> files) {
         new FTPDeleteTask().execute(files);
     }
 
-    //TODO: finish create
+    //TODO: check create
     @Override
     public void createDirectory(String name) {
         new FTPCreateDir().execute(name);
@@ -420,42 +400,14 @@ public class RemoteFilesFragment extends FilesFragment {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            filesFiller.setVisibility(View.VISIBLE);
-            filesRecycler.setVisibility(View.GONE);
-
-            pathFiller.setVisibility(View.VISIBLE);
-            pathRecycler.setVisibility(View.GONE);
-            noFiles.setVisibility(View.GONE);
+            showHideFiles(SHOW_FILLERS, -1);
         }
 
         @Override
         protected void onPostExecute(FTPFile[] result) {
-            if (result != null) {
-                RemoteFilesFragment.this.dir = dir;
-                filesAdapter.setDataset(result);
-                filesAdapter.notifyDataSetChanged();
-
-                filesFiller.setVisibility(View.GONE);
-                if (result.length == 0) {
-                    filesRecycler.setVisibility(View.GONE);
-                    noFiles.setVisibility(View.VISIBLE);
-                } else {
-                    filesRecycler.setVisibility(View.VISIBLE);
-                    noFiles.setVisibility(View.GONE);
-                    filesRecycler.getLayoutManager().scrollToPosition(0);
-                }
-
-                ArrayList<String> dirs = getDirs(dir);
-                pathAdapter.setDataset(dirs);
-                pathAdapter.notifyDataSetChanged();
-
-                pathFiller.setVisibility(View.GONE);
-                pathRecycler.setVisibility(View.VISIBLE);
-                pathRecycler.scrollToPosition(dirs.size() - 1);
-            } else {
-                Log.e(TAG, "files is null");
-            }
+            updateAdapters(result, dir);
         }
+
 
         @Override
         protected FTPFile[] doInBackground(String... params) {
@@ -728,31 +680,7 @@ public class RemoteFilesFragment extends FilesFragment {
 
         @Override
         protected void onPostExecute(FTPFile[] result) {
-            if (result != null) {
-                RemoteFilesFragment.this.dir = this.dir;
-                filesAdapter.setDataset(result);
-                filesAdapter.notifyDataSetChanged();
-
-                filesFiller.setVisibility(View.GONE);
-                if (result.length == 0) {
-                    filesRecycler.setVisibility(View.GONE);
-                    noFiles.setVisibility(View.VISIBLE);
-                } else {
-                    filesRecycler.setVisibility(View.VISIBLE);
-                    noFiles.setVisibility(View.GONE);
-                    filesRecycler.getLayoutManager().scrollToPosition(0);
-                }
-
-                ArrayList<String> dirs = getDirs(dir);
-                pathAdapter.setDataset(dirs);
-                pathAdapter.notifyDataSetChanged();
-
-                pathFiller.setVisibility(View.GONE);
-                pathRecycler.setVisibility(View.VISIBLE);
-                pathRecycler.scrollToPosition(dirs.size() - 1);
-            } else {
-                Log.e(TAG, "files is null");
-            }
+            updateAdapters(result, dir);
         }
 
         @Override
@@ -994,7 +922,45 @@ public class RemoteFilesFragment extends FilesFragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(actionMode!= null)
-            pasteMode(false);
+        pasteMode(false);
+    }
+
+    @Override
+    protected ArrayList<FTPFile> filter(List<FTPFile> files, String query) {
+        query = query.toLowerCase();
+
+        final ArrayList<FTPFile> filteredFileList = new ArrayList<>();
+        for (FTPFile file : files) {
+            final String text = file.getName().toLowerCase();
+            if (text.contains(query)) {
+                filteredFileList.add(file);
+            }
+        }
+        return filteredFileList;
+    }
+
+    private void updateAdapters(FTPFile[] result, String dir) {
+        if (result != null) {
+
+            ArrayList<String> dirs = getDirs(dir);
+            if(this.dir != null && this.dir.equals(dir) && filesAdapter.dataset != null){
+                filesAdapter.animateTo(Arrays.asList(result));
+            }
+            else {
+                filesAdapter.setDataset(result);
+                filesAdapter.notifyDataSetChanged();
+                this.dir = dir;
+                pathAdapter.setDataset(dirs);
+                pathAdapter.notifyDataSetChanged();
+            }
+
+            if (result.length == 0) {
+                showHideFiles(SHOW_NOFILES, dirs.size()-1);
+            } else {
+                showHideFiles(SHOW_FILES, dirs.size()-1);
+            }
+        } else {
+            Log.e(TAG, "files is null");
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.peppe.ftpclient.androidftp.FTPFilesExplorer;
 
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
@@ -12,14 +13,17 @@ import android.widget.TextView;
 import com.peppe.ftpclient.androidftp.R;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Created by Geri on 19/10/2015.
  */
-public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.ViewHolder> {
+public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.ViewHolder>{
     private static final String TAG = "FILES_ADAPTER";
     protected FilesFragment fragment;
-    protected ArrayList<E> dataset;
+    public ArrayList<E> dataset;
 
     //********************** ITEM SELECTION **********************//
 
@@ -99,6 +103,8 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
         this.cutItems = new ArrayList<>();
     }
 
+    protected abstract void sort(int mode);
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
@@ -114,7 +120,7 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
         final long T = G * K;
         final long[] dividers = new long[]{T, G, M, K, 1};
         final String[] units = new String[]{"TB", "GB", "MB", "KB", "B"};
-        String result = null;
+        String result = "0 B";
         for (int i = 0; i < dividers.length; i++) {
             final long divider = dividers[i];
             if (value >= divider) {
@@ -122,6 +128,7 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
                 break;
             }
         }
+        //Log.d(TAG, "value: "+value+", result: "+result);
         return result;
     }
 
@@ -130,29 +137,42 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
                           final String unit) {
         final double result =
                 divider > 1 ? (double) value / (double) divider : (double) value;
-        return String.format("%.1f %s", Double.valueOf(result), unit);
+        return String.format("%.1f %s", result, unit);
     }
 
     @Override
     public abstract void onBindViewHolder(ViewHolder holder, int position);
 
     public void setDataset(E[] dataset) {
-        if (dataset == null)
+        if (dataset == null) {
             Log.d(TAG, "file dataset null");
-        ArrayList<E> dirs = new ArrayList<>();
-        ArrayList<E> files = new ArrayList<>();
-        for (E dir : dataset) {
-            if (isDirectory(dir))
-                dirs.add(dir);
-            else
-                files.add(dir);
+            this.dataset = new ArrayList<>();
         }
-        this.dataset = new ArrayList<>();
-        int i = 0;
-        for (i = 0; i < dirs.size(); i++)
-            this.dataset.add(dirs.get(i));
-        for (i = 0 ; i < files.size(); i++)
-            this.dataset.add(files.get(i));
+        else {
+            /*
+            ArrayList<E> dirs = new ArrayList<>();
+            ArrayList<E> files = new ArrayList<>();
+            for (E dir : dataset) {
+                if (isDirectory(dir))
+                    dirs.add(dir);
+                else
+                    files.add(dir);
+            }
+            */
+            if (this.dataset == null)
+                this.dataset = new ArrayList<>();
+            animateTo(Arrays.asList(dataset));
+            sort(FileComparator.BY_NAME);
+
+            /*
+            int i = 0;
+            for (i = 0; i < dirs.size(); i++)
+                this.dataset.add(dirs.get(i));
+            for (i = 0; i < files.size(); i++)
+                this.dataset.add(files.get(i));
+                */
+        }
+
     }
 
     public abstract boolean isDirectory(E dir);
@@ -204,4 +224,92 @@ public abstract class FilesAdapter<E> extends RecyclerView.Adapter<FilesAdapter.
             return infoTextView;
         }
     }
+
+    protected abstract class FileComparator implements Comparator<E>{
+        public static final int BY_NAME = 101;
+        public static final int BY_SIZE = 102;
+        public static final int BY_TYPE = 103;
+        public static final int BY_TIME = 104;
+
+        protected int mode;
+
+        public FileComparator(int mode){
+            this.mode = mode;
+        }
+
+        protected String getName(String fullName){
+            if(fullName.indexOf('.')<0)
+                return fullName;
+            else
+                return fullName.substring(0, fullName.indexOf('.'));
+        }
+
+        protected String getExt(String fullName){
+            if(fullName.indexOf('.')<0)
+                return "";
+            else
+                return fullName.substring(fullName.indexOf('.')+1);
+        }
+    }
+
+    public E removeItem(int position) {
+        final E file = dataset.remove(position);
+        notifyItemRemoved(position);
+        return file;
+    }
+
+    public void addItem(int position, E file) {
+        dataset.add(position, file);
+        notifyItemInserted(position);
+    }
+
+    public void moveItem(int fromPosition, int toPosition) {
+        final E file = dataset.remove(fromPosition);
+        dataset.add(toPosition, file);
+        notifyItemMoved(fromPosition, toPosition);
+    }
+
+    private void applyAndAnimateRemovals(List<E> newData) {
+        for (int i = dataset.size() - 1; i >= 0; i--) {
+            final E file = dataset.get(i);
+            if (!newData.contains(file)) {
+                removeItem(i);
+            }
+        }
+    }
+
+    private void applyAndAnimateAdditions(List<E> newData) {
+        for (int i = 0; i < newData.size(); i++) {
+            final E file = newData.get(i);
+            if (!dataset.contains(file)) {
+                addItem(i, file);
+            }
+        }
+        /*
+        for (int i = newData.size() - 1; i >= 0; i--) {
+            final E file = newData.get(i);
+            if (!dataset.contains(file)) {
+                addItem(i, file);
+            }
+        }
+        */
+    }
+
+    private void applyAndAnimateMovedItems(List<E> newData) {
+        for (int toPosition = newData.size() - 1; toPosition >= 0; toPosition--) {
+            final E file = newData.get(toPosition);
+            final int fromPosition = dataset.indexOf(file);
+            if (fromPosition >= 0 && fromPosition != toPosition) {
+                moveItem(fromPosition, toPosition);
+            }
+        }
+    }
+
+    public void animateTo(List<E> newData) {
+        applyAndAnimateRemovals(newData);
+        applyAndAnimateAdditions(newData);
+        applyAndAnimateMovedItems(newData);
+    }
+
+
 }

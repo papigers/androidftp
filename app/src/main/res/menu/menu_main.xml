@@ -3,4 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" app:showAsAction="never" />
+
+    <item android:id="@+id/action_paste_file"
+        android:title="@string/action_paste_file"
+        android:icon="@drawable/ic_paste"
+        android:orderInCategory="2"
+        app:showAsAction="ifRoom"
+        android:visible="false"/>
+
 </menu>

@@ -21,7 +21,8 @@
     <string name="dialog_download_rename">Rename</string>
     <string name="dialog_download_delete">Delete</string>
     <string name="cancel_string">Cancel</string>
-    <string name="empty_files_remote">No Files</string>
+    <string name="empty_files">No Files</string>
+    <string name="no_storage_perm">Click to allow storage access</string>
     <string name="dialog_upload_up">Upload</string>
     <string name="percent0">0%</string>
     <string name="delete_confirm">Are you sure you want to delete</string>
@@ -29,6 +30,11 @@
     <string name="no">No</string>
     <string name="selected_count">%d Selected</string>
     <string name="folder_popup_select">Select</string>
+
+    <!-- Storage Permissions -->
+    <string name="cant_show_files">No storage access. Can\'t display files.</string>
+    <string name="cant_download_files">No storage access. Can\'t download files.</string>
+    <string name="try_again">Now, try again! :)</string>
 
     <!--File Action Mode-->
     <string name="action_download_file">Download</string>
@@ -39,6 +45,17 @@
     <string name="action_cut_file">Cut</string>
     <string name="action_copy_file">Copy</string>
     <string name="action_paste_file">Paste</string>
+    <string name="action_info_file">Info</string>
+    <string name="action_url_file">Copy URL</string>
+    <string name="action_share_file">Share</string>
+
+    <string name="share_file_title">Share File %s:</string>
+    <string name="sort_files_string">Sort</string>
+    <string name="files_search_string">Search</string>
+    <string name="sort_file_name">Sort by name</string>
+    <string name="sort_files_size">Sort by size</string>
+    <string name="sort_file_type">Sort by type</string>
+    <string name="sort_file_time">Sort by modification time</string>
 
     <string-array name="connection_protocol_spinner">
         <item>FTP</item>

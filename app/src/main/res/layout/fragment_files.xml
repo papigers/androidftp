@@ -16,10 +16,19 @@
         android:visibility="gone"
         android:paddingLeft="20dp"/>
 
+    <View
+        android:id="@+id/pathBlank"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_weight="8"
+        android:layout_gravity="center"
+        android:background="@drawable/path_gradinet"/>
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/empty_files_remote"
+        android:text="@string/empty_files"
         android:textColor="@color/colorPrimary"
         android:visibility="gone"
         android:id="@+id/noFilesTextView"
@@ -34,15 +43,6 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:visibility="gone"/>
-
-    <View
-        android:id="@+id/pathBlank"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_weight="8"
-        android:layout_gravity="center"
-        android:background="@drawable/path_gradinet"/>
 
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"

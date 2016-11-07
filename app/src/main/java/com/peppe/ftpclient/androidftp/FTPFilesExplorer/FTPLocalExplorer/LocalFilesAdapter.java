@@ -13,6 +13,7 @@ import com.peppe.ftpclient.androidftp.R;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Created by Geri on 25/10/2015.
@@ -47,10 +48,98 @@ public class LocalFilesAdapter extends FilesAdapter<File> {
     }
 
     @Override
+    protected void sort(int mode) {
+        ArrayList<File> sorted = new ArrayList<>(dataset);
+        Collections.sort(sorted, new LocalFileComparator(mode));
+        animateTo(sorted);
+    }
+
+    private class LocalFileComparator extends FileComparator{
+
+        public LocalFileComparator(int mode){
+            super(mode);
+        }
+
+        @Override
+        public int compare(File lhs, File rhs) {
+            if(lhs.isDirectory() && rhs.isFile()){
+                return -1;
+            }
+            else if (lhs.isFile() && rhs.isDirectory())
+                return 1;
+            else {
+                int res = 0;
+                switch (super.mode) {
+                    case BY_NAME:
+                        res = sortName(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortType(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortTime(lhs, rhs);
+                        if(res != 0) return res;
+                        return sortSize(lhs, rhs);
+                    case BY_SIZE:
+                        res = sortSize(lhs, rhs);
+                        if(res != 0) return res;
+                        res  = sortName(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortType(lhs, rhs);
+                        if(res != 0) return res;
+                        return sortTime(lhs, rhs);
+                    case BY_TYPE:
+                        res = sortType(lhs, rhs);
+                        if(res != 0) return res;
+                        res  = sortName(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortTime(lhs, rhs);
+                        if(res != 0) return res;
+                        return sortSize(lhs, rhs);
+                    case BY_TIME:
+                        res = sortTime(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortName(lhs, rhs);
+                        if(res != 0) return res;
+                        res = sortType(lhs, rhs);
+                        if(res != 0) return res;
+                        return sortSize(lhs, rhs);
+                    default:
+                        return 0;
+                }
+            }
+        }
+
+        private int sortName(File lhs, File rhs){
+            String name1 = getName(lhs.getName());
+            String name2 = getName(rhs.getName());
+            return name1.compareTo(name2);
+        }
+
+        private int sortSize(File lhs, File rhs){
+            long  res = lhs.length() - rhs.length();
+            if(res > 0) return 1;
+            else if (res < 0) return -1;
+            return 0;
+        }
+
+        private int sortTime(File lhs, File rhs){
+            long res = lhs.lastModified() - rhs.lastModified();
+            if(res > 0) return 1;
+            else if (res < 0) return -1;
+            return 0;
+        }
+
+        private int sortType(File lhs, File rhs){
+            String type1 = getExt(lhs.getName());
+            String type2 = getExt(rhs.getName());
+            return type1.compareTo(type2);
+        }
+    }
+
+    @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         holder.getNameTextView().setText(dataset.get(position).getName());
         String size = convertToStringRepresentation(dataset.get(position).length());
-        SimpleDateFormat formatter = new SimpleDateFormat("MMM d, yyyy hh:mm a");
+        SimpleDateFormat formatter = new SimpleDateFormat("MMM d, yyyy hh:mm a", java.util.Locale.getDefault());
         String time = formatter.format(dataset.get(position).lastModified());
         if (dataset.get(position).isDirectory())
             holder.getInfoTextView().setText(time);
@@ -80,8 +169,6 @@ public class LocalFilesAdapter extends FilesAdapter<File> {
             this.file = file;
             this.fragment = fragment;
         }
-
-        //TODO: handle listeners in paste mode.
 
         @Override
         public boolean onLongClick(View v) {

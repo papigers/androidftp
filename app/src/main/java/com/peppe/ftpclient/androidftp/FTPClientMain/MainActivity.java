@@ -1,7 +1,11 @@
 package com.peppe.ftpclient.androidftp.FTPClientMain;
 
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.FragmentManager;
@@ -28,13 +32,11 @@ import com.peppe.ftpclient.androidftp.R;
 
 import org.apache.commons.net.ftp.FTPClient;
 
-public class MainActivity extends AppCompatActivity implements ActionMode.Callback{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     private final String TAG = "MAINACTIVITY";
-    private final String TEST_HOST = "speedtest.tele2.net";
-    private final String TEST_USER =  "anonymous";
-    private final String TEST_PASS =  "";
-    private FTPClient client = null;
+
+    private final int MY_EXTERNAL_STORAGE = 401;
 
     public boolean isRemoteAlive = false;
     public boolean isLocalAlive = false;
@@ -43,11 +45,12 @@ public class MainActivity extends AppCompatActivity implements ActionMode.Callba
 
     public Toast commonToast;
 
-    public ActionMode actionMode;
+    private String savedTitle = null;
 
     public FloatingActionButton fab;
 
     private ConnectionsFragment cf;
+    private String errorMessage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,21 +78,63 @@ public class MainActivity extends AppCompatActivity implements ActionMode.Callba
             }
 
         });
+
+
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         cf = new ConnectionsFragment();
         ft.replace(R.id.main_placeholder, cf, "CONNECTIONS_FRAGMENT");
         ft.commit();
         Log.d(TAG, "after replace");
         fab = (FloatingActionButton) findViewById(R.id.connections_fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startEditConnection(null);
-            }
-        });
 
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
+    public boolean requestStoragePermission(String errorMessage) {
+        int sdk = Build.VERSION.SDK_INT;
+        if(sdk >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE}, MY_EXTERNAL_STORAGE);
+                this.errorMessage = errorMessage;
+                return false;
+            }
+            else
+                return true;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem paste = menu.findItem(R.id.action_paste_file);
+        if(getActiveFragment()!=null && paste != null ){
+            Log.d(TAG, "paste menu item found");
+            if(getActiveFragment().isPasteMode()) {
+                Log.d(TAG, "in paste mode");
+                savedTitle = getTitle().toString();
+                String state = (getActiveFragment().isCopy() ? "Copy" : "Cut");
+                setTitle(state + ": "+getActiveFragment().filesAdapter.getCutItemCount()+ " File(s).");
+
+            }
+            else if (savedTitle != null)
+                setTitle(savedTitle);
+            MenuItem home = menu.findItem(android.R.id.home);
+            int icon = ((getActiveFragment() != null && getActiveFragment().isPasteMode()) ? R.drawable.ic_cancel : R.drawable.ic_back);
+
+            getSupportActionBar().setHomeAsUpIndicator(icon);
+            paste.setVisible(getActiveFragment().isPasteMode());
+            return true;
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
 
     public void setRemoteFragment(RemoteFilesFragment frag){
         this.remote = frag;
@@ -100,17 +145,32 @@ public class MainActivity extends AppCompatActivity implements ActionMode.Callba
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()){
+            case R.id.action_paste_file:
+                getActiveFragment().pasteFiles();
+                invalidateOptionsMenu();
+                return true;
+            case android.R.id.home:
+                Log.d(TAG, "clicked home");
+                if(getActiveFragment().isPasteMode()){
+                    getActiveFragment().pasteMode(false);
+                    return true;
+                }
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
     public void onBackPressed() {
+        boolean back = false;
         if(remote != null && isRemoteAlive && !isLocalAlive){
             Log.d(TAG, "back pressed on remote");
-            boolean back = remote.pressBack();
-            if(back)
-                super.onBackPressed();
+            back = remote.pressBack();
         }
         else if(local != null && !isRemoteAlive && isLocalAlive){
-            boolean back = local.pressBack();
-            if(back)
-                super.onBackPressed();
+            back = local.pressBack();
         }
         else{
             super.onBackPressed();
@@ -118,42 +178,12 @@ public class MainActivity extends AppCompatActivity implements ActionMode.Callba
             Log.d(TAG, isRemoteAlive ? "remote is alive in main" : "remote is not alive in main");
             Log.d(TAG, isLocalAlive ? "local is alive in main" : "local is not alive in main");*/
         }
-
-    }
-
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        return true;
-
-    }
-
-    /*
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        Log.d(TAG,((event.getKeyCode() == KeyEvent.KEYCODE_BACK) ? "back" : "not back") +" "+
-                ((event.getAction() == KeyEvent.ACTION_UP) ? "up" : "not up"));
-        if(event.getKeyCode() == KeyEvent.KEYCODE_BACK){
-            FilesFragment frag = null;
-            if(remote != null && isRemoteAlive && !isLocalAlive){
-                frag = remote;
-            }
-            else if(local != null && !isRemoteAlive && isLocalAlive){
-                frag = local;
-            }
-            if(frag !=null && frag.isPasteMode()) {
-                Log.d(TAG, "back on paste mode");
-
-                if (!frag.pressBack()) {
-                    Log.d(TAG, "back on paste mode overrided");
-                    return true;
-                }
-                return super.dispatchKeyEvent(event);
-            }
-            else {
-                return super.dispatchKeyEvent(event);
-            }
+        if (back) {
+            super.onBackPressed();
         }
-        return super.dispatchKeyEvent(event);
-    }*/
+
+    }
+
 
     protected void onResume(){
         super.onResume();
@@ -206,33 +236,6 @@ public class MainActivity extends AppCompatActivity implements ActionMode.Callba
         }
     }
 
-
-    @Override
-    public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-        MenuInflater inflater = mode.getMenuInflater();
-        inflater.inflate(R.menu.files_action_mode_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-        return false;
-    }
-
-    @Override
-    public boolean onActionItemClicked(ActionMode mode, MenuItem item){
-        return getActiveFragment().onActionItemClicked(mode, item);
-    }
-
-
-    @Override
-    public void onDestroyActionMode(ActionMode mode) {
-        FilesFragment frag = getActiveFragment();
-        frag.actionMode = null;
-        frag.filesAdapter.clearSelections();
-        frag.filesAdapter.clearCuts();
-    }
-
     public FilesFragment getActiveFragment(){
         if(remote!=null && isRemoteAlive && !isLocalAlive)
             return remote;
@@ -240,4 +243,30 @@ public class MainActivity extends AppCompatActivity implements ActionMode.Callba
             return local;
     }
 
+    @Override
+    public void onClick(View v) {
+        if(isRemoteAlive && !isLocalAlive){
+            Toast.makeText(this, "remote!", Toast.LENGTH_SHORT).show();
+        }
+        else if(isLocalAlive && !isRemoteAlive){
+            Toast.makeText(this, "local!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode){
+            case MY_EXTERNAL_STORAGE:
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if(isRemoteAlive)
+                        Toast.makeText(this, getString(R.string.try_again), Toast.LENGTH_SHORT).show();
+                    if(local != null)
+                        local.refreshDir();
+                }
+                else
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
+        }
+    }
 }

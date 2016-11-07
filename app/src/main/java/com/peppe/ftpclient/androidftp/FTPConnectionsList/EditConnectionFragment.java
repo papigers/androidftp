@@ -64,6 +64,12 @@ public class EditConnectionFragment extends Fragment {
         return fragment;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        ((MainActivity)getActivity()).fab.hide();
+    }
+
     public EditConnectionFragment() {
         // Required empty public constructor
     }
@@ -81,7 +87,6 @@ public class EditConnectionFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        ((MainActivity) getActivity()).fab.setVisibility(View.GONE);
 
         form = new FormContainer(view);
 

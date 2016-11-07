@@ -2,9 +2,15 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item android:id="@+id/remote_files_settings"
-        android:title="@string/action_settings"
-        app:showAsAction="never"
-        />
+    <item android:id="@+id/action_search"
+        android:title="@string/sort_files_string"
+        app:actionViewClass="android.support.v7.widget.SearchView"
+        app:showAsAction="always"/>
 
+    <item
+        android:id="@+id/sort_files_menu"
+        android:title="@string/sort_files_string"
+        android:icon="@drawable/ic_sort"
+        app:showAsAction="ifRoom"
+        android:orderInCategory="20"/>
 </menu>
